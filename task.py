@@ -1,5 +1,6 @@
 import time
 import requests
+import csv
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse, urldefrag
 
@@ -44,7 +45,7 @@ while url_list:
     #飛ばす
     if res.status_code != 200:
         continue
-    
+
     res.encoding = res.apparent_encoding
     html_soup = BeautifulSoup(res.text, 'html.parser')
 
@@ -71,6 +72,14 @@ while url_list:
             and next_url not in url_list
         ):
             url_list.append(next_url)
+
+#CSVに入れる
+with open('musashino_sitemap.csv', 'w', newline='', encoding='utf-8-sig') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['URL', 'タイトル'])
+
+    for page_url, page_title in site_map.items():
+        writer.writerow([page_url, page_title])
 
 #URLとタイトルのみを表示
 for page_url, page_title in site_map.items():
