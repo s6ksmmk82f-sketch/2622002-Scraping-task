@@ -1,6 +1,8 @@
 import time
+import csv
 import requests
 from bs4 import BeautifulSoup
+from bs4.exceptions import ParserRejectedMarkup
 from urllib.parse import urljoin, urlparse, urldefrag
 
 url = 'https://www.musashino-u.ac.jp'
@@ -15,7 +17,7 @@ for _ in range(10):
     time.sleep(1)
     print("hogehoge")
 
-max_pages = 100
+max_pages = 1000
 
 while url_list:
     current_url = url_list.pop(0)
@@ -44,9 +46,17 @@ while url_list:
     #飛ばす
     if res.status_code != 200:
         continue
-    
+
     res.encoding = res.apparent_encoding
-    html_soup = BeautifulSoup(res.text, 'html.parser')
+
+    #HTMLとして認識できないものをスキップ
+    try:
+        html_soup = BeautifulSoup(res.text, 'html.parser')
+    except ParserRejectedMarkup:
+        print(f"解析できないため、スキップ：{current_url}")
+        continue
+
+    title_tag = html_soup.find('title')
 
     #URLをキー、タイトルはバリュー
     title_tag = html_soup.find('title')
@@ -71,6 +81,14 @@ while url_list:
             and next_url not in url_list
         ):
             url_list.append(next_url)
+
+#CSVに入れる
+with open('musashino_sitemap.csv', 'w', newline='', encoding='utf-8-sig') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(['URL', 'タイトル'])
+
+    for page_url, page_title in site_map.items():
+        writer.writerow([page_url, page_title])
 
 #URLとタイトルのみを表示
 for page_url, page_title in site_map.items():
